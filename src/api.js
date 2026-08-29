@@ -1,4 +1,4 @@
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000'
+const API_URL = import.meta.env.VITE_API_URL || 'https://disputetrack-api-production-93e0.up.railway.app'
 
 export function getToken() {
   return localStorage.getItem('dt_token')
