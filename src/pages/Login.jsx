@@ -14,7 +14,7 @@ export default function Login() {
     try {
       const res = await api('/api/auth/login', { method: 'POST', body: { email, password } })
       setToken(res.access_token)
-      navigate('/')
+      navigate('/wizard')
     } catch (err) {
       setError(err.message)
     }
@@ -29,7 +29,7 @@ export default function Login() {
         <input className="w-full mb-6 px-3 py-2 rounded bg-slate-800 border border-slate-700" type="password" placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)} />
         <button className="w-full py-2 rounded bg-amber-500 text-slate-950 font-semibold hover:bg-amber-400">Log in</button>
         <p className="text-sm text-slate-400 mt-4">
-          No agency account? <Link to="/register" className="text-amber-400">Register</Link>
+          New here? <Link to="/quiz" className="text-amber-400">Take the 4-question quiz</Link>
         </p>
       </form>
     </div>
