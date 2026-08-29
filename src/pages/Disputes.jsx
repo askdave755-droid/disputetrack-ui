@@ -3,11 +3,18 @@ import { api } from '../api.js'
 
 const STATUSES = ['draft', 'mailed', 'pending', 'deleted', 'verified', 'updated']
 const BUREAUS = ['equifax', 'experian', 'transunion']
+const TEMPLATES = {
+  fcra_611: 'FCRA 611 — bureau dispute',
+  fcra_623: 'FCRA 623 — furnisher dispute',
+  fdcpa_validation: 'FDCPA — debt validation (collector)',
+  goodwill: 'Goodwill adjustment',
+}
 
 export default function Disputes() {
   const [disputes, setDisputes] = useState([])
   const [clients, setClients] = useState([])
   const [letter, setLetter] = useState(null)
+  const [templateFor, setTemplateFor] = useState({})
   const [form, setForm] = useState({ client_id: '', bureau: 'equifax', creditor_name: '', account_number_masked: '', amount: '', reason: '' })
 
   const load = () => {
@@ -31,7 +38,8 @@ export default function Disputes() {
   }
 
   const generateLetter = async (id) => {
-    const res = await api(`/api/disputes/${id}/generate-letter`, { method: 'POST' })
+    const template = templateFor[id] || 'fcra_611'
+    const res = await api(`/api/disputes/${id}/generate-letter?template=${template}`, { method: 'POST' })
     setLetter(res)
     load()
   }
@@ -65,6 +73,13 @@ export default function Disputes() {
             <select className="px-2 py-1 rounded bg-slate-800 border border-slate-700 text-sm" value={d.status} onChange={(e) => setStatus(d.id, e.target.value)}>
               {STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
             </select>
+            <select
+              className="px-2 py-1 rounded bg-slate-800 border border-slate-700 text-sm"
+              value={templateFor[d.id] || 'fcra_611'}
+              onChange={(e) => setTemplateFor({ ...templateFor, [d.id]: e.target.value })}
+            >
+              {Object.entries(TEMPLATES).map(([k, label]) => <option key={k} value={k}>{label}</option>)}
+            </select>
             <button onClick={() => generateLetter(d.id)} className="px-3 py-1 rounded bg-slate-800 border border-amber-500/50 text-amber-400 text-sm hover:bg-slate-700">
               Generate letter
             </button>
@@ -76,7 +91,10 @@ export default function Disputes() {
       {letter && (
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center p-6" onClick={() => setLetter(null)}>
           <div className="bg-slate-900 border border-slate-700 rounded-xl p-6 max-w-2xl w-full max-h-[80vh] overflow-auto" onClick={(e) => e.stopPropagation()}>
-            <h2 className="font-semibold mb-3">Generated letter <span className="text-xs text-slate-500">(citations current at generation time)</span></h2>
+            <h2 className="font-semibold mb-3">
+              Generated letter <span className="text-xs text-amber-400">{TEMPLATES[letter.template] || letter.template}</span>
+              <span className="text-xs text-slate-500"> — citations current at generation time</span>
+            </h2>
             <pre className="whitespace-pre-wrap text-sm text-slate-300">{letter.content}</pre>
             <button onClick={() => setLetter(null)} className="mt-4 px-4 py-2 rounded bg-slate-800 text-sm">Close</button>
           </div>
