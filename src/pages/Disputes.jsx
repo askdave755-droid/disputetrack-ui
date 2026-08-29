@@ -4,7 +4,8 @@ import { api } from '../api.js'
 const STATUSES = ['draft', 'mailed', 'pending', 'deleted', 'verified', 'updated']
 const BUREAUS = ['equifax', 'experian', 'transunion']
 const TEMPLATES = {
-  fcra_611: 'FCRA 611 — bureau dispute',
+  fcra_611: 'Round 1 — FCRA 611 bureau dispute',
+  method_of_verification: 'Round 2 — method of verification',
   fcra_623: 'FCRA 623 — furnisher dispute',
   fdcpa_validation: 'FDCPA — debt validation (collector)',
   goodwill: 'Goodwill adjustment',
