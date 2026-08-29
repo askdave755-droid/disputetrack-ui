@@ -9,6 +9,7 @@ const TEMPLATES = {
   fcra_623: 'FCRA 623 — furnisher dispute',
   fdcpa_validation: 'FDCPA — debt validation (collector)',
   goodwill: 'Goodwill adjustment',
+  bk_tradeline_cleanup: 'BK file — post-bankruptcy tradeline cleanup',
 }
 const BUREAU_ADDRESSES = {
   equifax: { name: 'Equifax Information Services LLC', address_line1: 'P.O. Box 740256', address_city: 'Atlanta', address_state: 'GA', address_zip: '30374-0256' },
@@ -16,7 +17,7 @@ const BUREAU_ADDRESSES = {
   transunion: { name: 'TransUnion LLC Consumer Dispute Center', address_line1: 'P.O. Box 2000', address_city: 'Chester', address_state: 'PA', address_zip: '19016' },
 }
 const EMPTY_ADDR = { name: '', address_line1: '', address_line2: '', address_city: '', address_state: '', address_zip: '' }
-const BUREAU_TEMPLATES = ['fcra_611', 'method_of_verification']
+const BUREAU_TEMPLATES = ['fcra_611', 'method_of_verification', 'bk_tradeline_cleanup']
 
 export default function Disputes() {
   const [disputes, setDisputes] = useState([])
