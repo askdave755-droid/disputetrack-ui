@@ -10,12 +10,24 @@ const TEMPLATES = {
   fdcpa_validation: 'FDCPA — debt validation (collector)',
   goodwill: 'Goodwill adjustment',
 }
+const BUREAU_ADDRESSES = {
+  equifax: { name: 'Equifax Information Services LLC', address_line1: 'P.O. Box 740256', address_city: 'Atlanta', address_state: 'GA', address_zip: '30374-0256' },
+  experian: { name: 'Experian', address_line1: 'P.O. Box 4500', address_city: 'Allen', address_state: 'TX', address_zip: '75013' },
+  transunion: { name: 'TransUnion LLC Consumer Dispute Center', address_line1: 'P.O. Box 2000', address_city: 'Chester', address_state: 'PA', address_zip: '19016' },
+}
+const EMPTY_ADDR = { name: '', address_line1: '', address_line2: '', address_city: '', address_state: '', address_zip: '' }
+const BUREAU_TEMPLATES = ['fcra_611', 'method_of_verification']
 
 export default function Disputes() {
   const [disputes, setDisputes] = useState([])
   const [clients, setClients] = useState([])
   const [letter, setLetter] = useState(null)
   const [templateFor, setTemplateFor] = useState({})
+  const [mailTo, setMailTo] = useState(EMPTY_ADDR)
+  const [mailFrom, setMailFrom] = useState(EMPTY_ADDR)
+  const [mailResult, setMailResult] = useState(null)
+  const [mailError, setMailError] = useState('')
+  const [sending, setSending] = useState(false)
   const [form, setForm] = useState({ client_id: '', bureau: 'equifax', creditor_name: '', account_number_masked: '', amount: '', reason: '' })
 
   const load = () => {
@@ -42,7 +54,46 @@ export default function Disputes() {
     const template = templateFor[id] || 'fcra_611'
     const res = await api(`/api/disputes/${id}/generate-letter?template=${template}`, { method: 'POST' })
     setLetter(res)
+    setMailResult(null)
+    setMailError('')
+    // Prefill mail form
+    const dispute = disputes.find((x) => x.id === id)
+    const client = dispute && clients.find((c) => c.id === dispute.client_id)
+    if (dispute && BUREAU_TEMPLATES.includes(template) && BUREAU_ADDRESSES[dispute.bureau]) {
+      setMailTo({ ...EMPTY_ADDR, ...BUREAU_ADDRESSES[dispute.bureau] })
+    } else {
+      setMailTo({ ...EMPTY_ADDR, name: dispute ? dispute.creditor_name : '' })
+    }
+    setMailFrom({ ...EMPTY_ADDR, name: client ? `${client.first_name} ${client.last_name}` : '', address_line1: client ? client.address : '' })
     load()
+  }
+
+  const addrSet = (setter, obj) => (k) => (e) => setter({ ...obj, [k]: e.target.value })
+
+  const sendMail = async () => {
+    setSending(true)
+    setMailError('')
+    try {
+      const res = await api(`/api/disputes/${letter.dispute_id}/letters/${letter.id}/mail`, {
+        method: 'POST',
+        body: { to: mailTo, sender: mailFrom },
+      })
+      setMailResult(res)
+      setLetter({ ...letter, tracking_number: res.tracking_number, mail_status: res.mail_status })
+    } catch (e) {
+      setMailError(e.message)
+    }
+    setSending(false)
+  }
+
+  const refreshMailStatus = async () => {
+    try {
+      const res = await api(`/api/disputes/${letter.dispute_id}/letters/${letter.id}/mail-status`)
+      setMailResult(res)
+      setLetter({ ...letter, mail_status: res.mail_status })
+    } catch (e) {
+      setMailError(e.message)
+    }
   }
 
   return (
@@ -97,6 +148,37 @@ export default function Disputes() {
               <span className="text-xs text-slate-500"> — citations current at generation time</span>
             </h2>
             <pre className="whitespace-pre-wrap text-sm text-slate-300">{letter.content}</pre>
+
+            <div className="mt-5 border-t border-slate-800 pt-4">
+              <h3 className="text-sm font-semibold mb-2">Send certified mail (Lob)</h3>
+              {letter.tracking_number ? (
+                <div className="text-sm">
+                  <p className="text-emerald-400">Mailed — USPS tracking: <span className="font-mono">{letter.tracking_number}</span></p>
+                  <p className="text-slate-400 text-xs mt-1">Status: {mailResult?.mail_status || letter.mail_status || 'sent'}{mailResult?.expected_delivery ? ` — expected ${mailResult.expected_delivery}` : ''}</p>
+                  <button onClick={refreshMailStatus} className="mt-2 px-3 py-1 rounded bg-slate-800 text-xs">Refresh delivery status</button>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+                  <div>
+                    <p className="text-xs text-slate-500 mb-1">To</p>
+                    {['name', 'address_line1', 'address_line2', 'address_city', 'address_state', 'address_zip'].map((k) => (
+                      <input key={k} className="w-full mb-1 px-2 py-1 rounded bg-slate-800 border border-slate-700 text-xs" placeholder={k.replace('address_', '').replace('_', ' ')} value={mailTo[k]} onChange={addrSet(setMailTo, mailTo)(k)} />
+                    ))}
+                  </div>
+                  <div>
+                    <p className="text-xs text-slate-500 mb-1">From (return address)</p>
+                    {['name', 'address_line1', 'address_line2', 'address_city', 'address_state', 'address_zip'].map((k) => (
+                      <input key={k} className="w-full mb-1 px-2 py-1 rounded bg-slate-800 border border-slate-700 text-xs" placeholder={k.replace('address_', '').replace('_', ' ')} value={mailFrom[k]} onChange={addrSet(setMailFrom, mailFrom)(k)} />
+                    ))}
+                  </div>
+                  {mailError && <p className="md:col-span-2 text-red-400 text-xs">{mailError}</p>}
+                  <button onClick={sendMail} disabled={sending} className="md:col-span-2 py-2 rounded bg-amber-500 text-slate-950 font-semibold text-sm hover:bg-amber-400 disabled:opacity-50">
+                    {sending ? 'Sending…' : 'Mail it certified'}
+                  </button>
+                </div>
+              )}
+            </div>
+
             <button onClick={() => setLetter(null)} className="mt-4 px-4 py-2 rounded bg-slate-800 text-sm">Close</button>
           </div>
         </div>
