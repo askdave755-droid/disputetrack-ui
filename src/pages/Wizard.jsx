@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { api } from '../api.js'
+import { api, API_URL, getToken } from '../api.js'
 import Calendly from '../components/Calendly.jsx'
 
 const TIER_NAMES = { diy: 'DIY', guided: 'Guided', dwy: 'Done-With-You', d4y: 'Done-For-You' }
@@ -43,6 +43,8 @@ export default function Wizard() {
   const [callDone, setCallDone] = useState(false)
   const [funding, setFunding] = useState({ score: '', tradelines: '', limit: '' })
   const [copied, setCopied] = useState(false)
+  const [uploading, setUploading] = useState(false)
+  const [importResult, setImportResult] = useState(null)
 
   const load = () => api('/api/wizard').then(setProgress).catch((e) => setErr(e.message))
 
@@ -95,8 +97,32 @@ export default function Wizard() {
 
   const setOutcome = (bureau, value) => patch({ bureau_outcomes: { ...outcomes, [bureau]: value } })
   const toggleG6 = (key) => patch({ gate6_steps: { ...g6, [key]: !g6[key] } })
-
   const saveFunding = () => patch({ funding })
+
+  const uploadReport = async (file) => {
+    if (!file) return
+    setUploading(true)
+    setErr('')
+    setImportResult(null)
+    try {
+      const fd = new FormData()
+      fd.append('file', file)
+      const res = await fetch(`${API_URL}/api/wizard/import-report`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${getToken()}` },
+        body: fd,
+      })
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok) throw new Error(data.detail || `Upload failed: ${res.status}`)
+      setImportResult(data)
+      api('/api/disputes').then(setDisputes).catch(() => {})
+      load()
+    } catch (e) {
+      setErr(e.message)
+    } finally {
+      setUploading(false)
+    }
+  }
 
   const copyReferral = async () => {
     const link = `${window.location.origin}/?ref=${me?.id || 'friend'}`
@@ -162,9 +188,36 @@ export default function Wizard() {
   const bodies = {
     1: (
       <>
+        <div className="bg-slate-800 border-2 border-emerald-600 rounded-lg p-4 mb-3">
+          <p className="font-medium mb-1">⚡ Auto-Import — skip the typing</p>
+          <p className="text-xs text-slate-400 mb-3">
+            In IdentityIQ: open your 3-bureau report → Print/Download → save the HTML file → upload it here.
+            We find every negative account and stage it for your review. Nothing is disputed automatically.
+          </p>
+          <label className={`inline-block px-4 py-2 rounded font-semibold text-sm cursor-pointer ${uploading ? 'bg-slate-600 text-slate-300' : 'bg-emerald-500 text-slate-950 hover:bg-emerald-400'}`}>
+            <input type="file" accept=".html,.htm" className="hidden" disabled={uploading} onChange={(e) => uploadReport(e.target.files?.[0])} />
+            {uploading ? 'Reading report...' : 'Upload IdentityIQ report'}
+          </label>
+          {importResult && (
+            <div className="mt-3 text-sm bg-slate-900 border border-emerald-700 rounded-lg p-3">
+              <p className="text-emerald-400 font-semibold">
+                ✅ Found {importResult.accounts_found} accounts · {importResult.negatives_found} negative · {importResult.disputes_created} dispute{importResult.disputes_created === 1 ? '' : 's'} staged for review
+                {importResult.skipped_duplicates > 0 && ` (${importResult.skipped_duplicates} already on file)`}
+              </p>
+              <ul className="text-xs text-slate-400 mt-2 space-y-1">
+                {importResult.created.map((c, i) => (
+                  <li key={i}>• {c.creditor} — {BUREAU_LABEL[c.bureau] || c.bureau}{c.balance != null ? ` — $${c.balance}` : ''}</li>
+                ))}
+              </ul>
+              <button onClick={() => complete(1)} className="mt-3 px-4 py-2 rounded bg-amber-500 text-slate-950 font-semibold hover:bg-amber-400 text-sm">
+                Review them in Gate 2 →
+              </button>
+            </div>
+          )}
+        </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           <div className="bg-slate-800 border border-slate-700 rounded-lg p-4">
-            <p className="font-medium mb-1">Connect Credit Monitoring</p>
+            <p className="font-medium mb-1">Get your reports first</p>
             <p className="text-xs text-slate-400 mb-3">💡 Tip: IdentityIQ or SmartCredit both offer a $1 trial — pull all 3 bureaus in minutes.</p>
             <div className="flex gap-2">
               <a href="https://www.identityiq.com" target="_blank" rel="noreferrer" className="text-xs px-3 py-2 rounded border border-slate-600 hover:border-amber-500">IdentityIQ</a>
@@ -172,14 +225,16 @@ export default function Wizard() {
             </div>
           </div>
           <div className="bg-slate-800 border border-slate-700 rounded-lg p-4">
-            <p className="font-medium mb-1">Upload PDFs Manually</p>
-            <p className="text-xs text-slate-400 mb-3">Already have your reports? Enter each negative account as a dispute and we take it from there.</p>
+            <p className="font-medium mb-1">Enter accounts by hand</p>
+            <p className="text-xs text-slate-400 mb-3">Prefer manual? Type each negative account in yourself.</p>
             <Link to="/disputes" className="text-xs px-3 py-2 inline-block rounded border border-slate-600 hover:border-amber-500">Enter accounts</Link>
           </div>
         </div>
-        <button onClick={() => complete(1)} className="mt-4 px-4 py-2 rounded bg-amber-500 text-slate-950 font-semibold hover:bg-amber-400">
-          I have my 3 reports →
-        </button>
+        {!importResult && (
+          <button onClick={() => complete(1)} className="mt-4 px-4 py-2 rounded bg-amber-500 text-slate-950 font-semibold hover:bg-amber-400">
+            I have my 3 reports →
+          </button>
+        )}
       </>
     ),
 
@@ -412,7 +467,7 @@ export default function Wizard() {
               }`}
             >
               <div className="flex items-center gap-3 mb-1">
-                <span className="text-lg">{done ? '✅' : open ? (current ? '🔓' : '🔓') : '🔒'}</span>
+                <span className="text-lg">{done ? '✅' : open ? '🔓' : '🔒'}</span>
                 <h2 className="font-bold flex-1">
                   GATE {n} — {title}
                 </h2>
