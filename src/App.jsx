@@ -4,6 +4,8 @@ import Landing from './pages/Landing.jsx'
 import Quiz from './pages/Quiz.jsx'
 import Login from './pages/Login.jsx'
 import Register from './pages/Register.jsx'
+import ForgotPassword from './pages/ForgotPassword.jsx'
+import ResetPassword from './pages/ResetPassword.jsx'
 import Dashboard from './pages/Dashboard.jsx'
 import Wizard from './pages/Wizard.jsx'
 import Counselor from './pages/Counselor.jsx'
@@ -46,6 +48,8 @@ export default function App() {
       <Route path="/quiz" element={<Quiz />} />
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
+      <Route path="/forgot-password" element={<ForgotPassword />} />
+      <Route path="/reset-password" element={<ResetPassword />} />
       <Route path="/dashboard" element={<Protected><Layout><Dashboard /></Layout></Protected>} />
       <Route path="/wizard" element={<Protected><Layout><Wizard /></Layout></Protected>} />
       <Route path="/counselor" element={<Protected><Layout><Counselor /></Layout></Protected>} />
