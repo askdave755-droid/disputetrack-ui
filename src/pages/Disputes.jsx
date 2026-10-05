@@ -169,7 +169,7 @@ export default function Disputes() {
 
   return (
     <div>
-      <h1 className="text-xl font-bold mb-6">Dispute pipeline</h1>
+      <h1 className="text-xl font-bold mb-6">Dispute pipeline <span className="text-xs text-amber-400 font-normal">build 080bdd5</span></h1>
 
       {followUps.length > 0 && (
         <div className="mb-6">
