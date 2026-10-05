@@ -43,6 +43,7 @@ export default function Disputes() {
   const [mailFrom, setMailFrom] = useState(EMPTY_ADDR)
   const [mailResult, setMailResult] = useState(null)
   const [mailError, setMailError] = useState('')
+  const [genError, setGenError] = useState('')
   const [sending, setSending] = useState(false)
   const [selfTrack, setSelfTrack] = useState('')
   const [selfVia, setSelfVia] = useState('docsmit')
@@ -73,23 +74,32 @@ export default function Disputes() {
 
   const generateLetter = async (id, templateOverride) => {
     const template = templateOverride || templateFor[id] || 'fcra_611'
-    const res = await api(`/api/disputes/${id}/generate-letter?template=${template}`, { method: 'POST' })
-    setLetter(res)
-    setMailResult(null)
-    setMailError('')
-    setLogResult(null)
-    setSelfTrack('')
-    setSelfDate('')
-    // Prefill mail form
+    setGenError('')
     const dispute = disputes.find((x) => x.id === id)
     const client = dispute && clients.find((c) => c.id === dispute.client_id)
-    if (dispute && BUREAU_TEMPLATES.includes(template) && BUREAU_ADDRESSES[dispute.bureau]) {
-      setMailTo({ ...EMPTY_ADDR, ...BUREAU_ADDRESSES[dispute.bureau] })
-    } else {
-      setMailTo({ ...EMPTY_ADDR, name: dispute ? dispute.creditor_name : '' })
+    if (client && (!(client.address || '').trim() || (client.ssn_last4 || '').trim().length !== 4)) {
+      setGenError(`${client.first_name} ${client.last_name} needs a mailing address and SSN last 4 before letters can be generated — update them on the Clients page.`)
+      return
     }
-    setMailFrom({ ...EMPTY_ADDR, name: client ? `${client.first_name} ${client.last_name}` : '', address_line1: client ? client.address : '' })
-    load()
+    try {
+      const res = await api(`/api/disputes/${id}/generate-letter?template=${template}`, { method: 'POST' })
+      setLetter(res)
+      setMailResult(null)
+      setMailError('')
+      setLogResult(null)
+      setSelfTrack('')
+      setSelfDate('')
+      // Prefill mail form
+      if (dispute && BUREAU_TEMPLATES.includes(template) && BUREAU_ADDRESSES[dispute.bureau]) {
+        setMailTo({ ...EMPTY_ADDR, ...BUREAU_ADDRESSES[dispute.bureau] })
+      } else {
+        setMailTo({ ...EMPTY_ADDR, name: dispute ? dispute.creditor_name : '' })
+      }
+      setMailFrom({ ...EMPTY_ADDR, name: client ? `${client.first_name} ${client.last_name}` : '', address_line1: client ? client.address : '' })
+      load()
+    } catch (err) {
+      setGenError(err.message || 'Letter generation failed — check the client profile and try again.')
+    }
   }
 
   const addrSet = (setter, obj) => (k) => (e) => setter({ ...obj, [k]: e.target.value })
@@ -227,6 +237,7 @@ export default function Disputes() {
             </button>
           </div>
         ))}
+        {genError && <p className="text-red-400 text-sm mb-3">{genError}</p>}
         {disputes.length === 0 && <p className="text-slate-500 text-sm">No disputes yet.</p>}
       </div>
 
@@ -284,46 +295,4 @@ export default function Disputes() {
                       <option value="usps">USPS in person</option>
                       <option value="other">Other</option>
                     </select>
-                    <input type="date" className="px-2 py-2 rounded bg-slate-800 border border-slate-700 text-xs" value={selfDate} onChange={(e) => setSelfDate(e.target.value)} />
-                  </div>
-                  {mailError && <p className="text-red-400 text-xs mt-2">{mailError}</p>}
-                  <button onClick={logSelfMail} disabled={sending || !selfTrack} className="mt-2 w-full py-2 rounded bg-amber-500 text-slate-950 font-semibold text-sm hover:bg-amber-400 disabled:opacity-50">
-                    {sending ? 'Saving…' : 'Log mailing & start deadline clock'}
-                  </button>
-                  {logResult?.follow_up && (
-                    <p className="text-emerald-400 text-xs mt-2">
-                      Logged. {logResult.follow_up.deadline_days}-day response window — check back {logResult.follow_up.days_left >= 0 ? `in ${logResult.follow_up.days_left} days` : 'now'}.
-                    </p>
-                  )}
-
-                  <details className="mt-5 text-xs text-slate-500">
-                    <summary className="cursor-pointer hover:text-slate-300">Advanced: send via connected Lob account (owner use)</summary>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm mt-3">
-                      <div>
-                        <p className="text-xs text-slate-500 mb-1">To</p>
-                        {['name', 'address_line1', 'address_line2', 'address_city', 'address_state', 'address_zip'].map((k) => (
-                          <input key={k} className="w-full mb-1 px-2 py-1 rounded bg-slate-800 border border-slate-700 text-xs" placeholder={k.replace('address_', '').replace('_', ' ')} value={mailTo[k]} onChange={addrSet(setMailTo, mailTo)(k)} />
-                        ))}
-                      </div>
-                      <div>
-                        <p className="text-xs text-slate-500 mb-1">From (return address)</p>
-                        {['name', 'address_line1', 'address_line2', 'address_city', 'address_state', 'address_zip'].map((k) => (
-                          <input key={k} className="w-full mb-1 px-2 py-1 rounded bg-slate-800 border border-slate-700 text-xs" placeholder={k.replace('address_', '').replace('_', ' ')} value={mailFrom[k]} onChange={addrSet(setMailFrom, mailFrom)(k)} />
-                        ))}
-                      </div>
-                      <button onClick={sendMail} disabled={sending} className="md:col-span-2 py-2 rounded bg-slate-700 text-slate-200 font-semibold text-sm hover:bg-slate-600 disabled:opacity-50">
-                        {sending ? 'Sending…' : 'Mail via Lob (bills platform account)'}
-                      </button>
-                    </div>
-                  </details>
-                </div>
-              )}
-            </div>
-
-            <button onClick={() => setLetter(null)} className="mt-4 px-4 py-2 rounded bg-slate-800 text-sm">Close</button>
-          </div>
-        </div>
-      )}
-    </div>
-  )
-}
+                    <input type="date" className="px-2 py-2 rounded bg-slate-
