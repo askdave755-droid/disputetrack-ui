@@ -68,8 +68,8 @@ export default function Clients() {
           <input className="px-3 py-2 rounded bg-slate-800 border border-slate-700" placeholder="Last name" value={form.last_name} onChange={set('last_name')} required />
           <input className="px-3 py-2 rounded bg-slate-800 border border-slate-700" placeholder="Email" value={form.email} onChange={set('email')} />
           <input className="px-3 py-2 rounded bg-slate-800 border border-slate-700" placeholder="Phone" value={form.phone} onChange={set('phone')} />
-          <input className="px-3 py-2 rounded bg-slate-800 border border-slate-700" placeholder="Mailing address (street, city, state, zip)" value={form.address} onChange={set('address')} />
-          <input className="px-3 py-2 rounded bg-slate-800 border border-slate-700" placeholder="SSN last 4" maxLength={4} inputMode="numeric" value={form.ssn_last4} onChange={set('ssn_last4')} />
+          <input className="px-3 py-2 rounded bg-slate-800 border border-slate-700" placeholder="Mailing address (street, city, state, zip)" value={form.address} onChange={set('address')} required />
+          <input className="px-3 py-2 rounded bg-slate-800 border border-slate-700" placeholder="SSN last 4" maxLength={4} inputMode="numeric" value={form.ssn_last4} onChange={set('ssn_last4')} required />
           {error && <p className="md:col-span-3 text-red-400 text-sm">{error}</p>}
           <div className="md:col-span-3 flex gap-3">
             <button className="flex-1 py-2 rounded bg-amber-500 text-slate-950 font-semibold hover:bg-amber-400">
@@ -82,7 +82,7 @@ export default function Clients() {
         </form>
       )}
 
-      <div className="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden">
+      <div className="bg-slate-900 border border-slate-800 rounded-xl overflow-x-auto">
         <table className="w-full text-sm">
           <thead className="text-slate-400 border-b border-slate-800">
             <tr>
