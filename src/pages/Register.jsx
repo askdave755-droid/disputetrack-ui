@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { api, setToken } from '../api.js'
+import { FREE_MODE } from '../flags.js'
 
 export default function Register() {
   const [form, setForm] = useState({ agency_name: '', full_name: '', email: '', password: '' })
@@ -38,6 +39,7 @@ export default function Register() {
         <h1 className="text-2xl font-bold text-amber-400 mb-2">{pending ? 'Your path is ready' : 'Start your agency'}</h1>
         <p className="text-sm text-slate-400 mb-6">
           {pending ? 'Create your account to unlock Gate 1.' : 'Creates your tenant workspace + owner account.'}
+          {FREE_MODE && <span className="block text-green-400 mt-2">Free for now. No credit card.</span>}
         </p>
         {error && <p className="text-red-400 text-sm mb-4">{error}</p>}
         <input className="w-full mb-3 px-3 py-2 rounded bg-slate-800 border border-slate-700" placeholder="Agency or business name" value={form.agency_name} onChange={set('agency_name')} />

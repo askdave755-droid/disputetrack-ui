@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+import { FREE_MODE } from '../flags.js'
 
 const QUESTIONS = [
   {
@@ -111,6 +112,7 @@ export default function Quiz() {
             <p className="text-sm text-slate-400 mb-6">
               Recommended: <span className="text-amber-400 font-semibold">{TIERS[recommended].name}</span> —
               or self-select any tier.
+              {FREE_MODE && <span className="block mt-1 text-green-400">Free for now — every tier is included, no card.</span>}
             </p>
             <div className="space-y-3 mb-6">
               {TIER_ORDER.map((key) => (
@@ -126,14 +128,16 @@ export default function Quiz() {
                       {TIERS[key].name}
                       {key === recommended && <span className="ml-2 text-xs text-amber-400">★ recommended</span>}
                     </span>
-                    <span className="text-amber-400 font-bold">${TIERS[key].price}/mo</span>
+                    <span className={FREE_MODE ? 'text-green-400 font-bold' : 'text-amber-400 font-bold'}>
+                      {FREE_MODE ? 'Free' : `$${TIERS[key].price}/mo`}
+                    </span>
                   </span>
                   <span className="block text-xs text-slate-400 mt-1">{TIERS[key].blurb}</span>
                 </button>
               ))}
             </div>
             <button onClick={finish} className="w-full py-3 rounded-lg bg-amber-500 text-slate-950 font-bold hover:bg-amber-400">
-              Create your account — start for ${TIERS[selected].price}/mo →
+              {FREE_MODE ? 'Create your account — it’s free →' : `Create your account — start for $${TIERS[selected].price}/mo →`}
             </button>
             <p className="text-xs text-slate-500 mt-3 text-center">
               Already have an account? <Link to="/login" className="text-amber-400">Log in</Link>

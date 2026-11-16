@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { api } from '../api.js'
+import { FREE_MODE } from '../flags.js'
 
 export default function Dashboard() {
   const [me, setMe] = useState(null)
@@ -19,9 +20,15 @@ export default function Dashboard() {
   return (
     <div>
       <h1 className="text-xl font-bold mb-1">{me ? me.tenant_name : 'Dashboard'}</h1>
-      <p className="text-sm text-slate-400 mb-6">
-        Plan: <span className={me?.plan_status === 'active' ? 'text-green-400' : 'text-amber-400'}>{me?.plan_status || '...'}</span>
-      </p>
+      {FREE_MODE ? (
+        <p className="text-sm text-slate-400 mb-6">
+          Access: <span className="text-green-400">Free for now — full workspace</span>
+        </p>
+      ) : (
+        <p className="text-sm text-slate-400 mb-6">
+          Plan: <span className={me?.plan_status === 'active' ? 'text-green-400' : 'text-amber-400'}>{me?.plan_status || '...'}</span>
+        </p>
+      )}
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
         <div className="bg-slate-900 border border-slate-800 rounded-xl p-5">
