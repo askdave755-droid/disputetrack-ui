@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { api } from '../api.js'
+import { FREE_MODE } from '../flags.js'
 
 const TIERS = [
   { key: 'diy', name: 'DIY', price: 29, blurb: 'Full software, letter engine, PDF downloads. You drive.' },
@@ -8,7 +9,37 @@ const TIERS = [
   { key: 'd4y', name: 'Done-For-You', price: 499, blurb: 'White-glove: we run the process, you watch the dashboard.' },
 ]
 
-export default function Billing() {
+function FreeBilling() {
+  return (
+    <div className="max-w-3xl">
+      <h1 className="text-xl font-bold mb-2">Billing</h1>
+      <p className="text-sm text-green-400 mb-2">Free for now</p>
+      <p className="text-sm text-slate-400 mb-6">
+        Checkout is turned off. Every tier is included — no card and no Stripe redirect.
+        You can use the full workspace as soon as you create an account.
+      </p>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {TIERS.map((t) => (
+          <div key={t.key} className="bg-slate-900 border border-slate-800 rounded-xl p-5 flex flex-col">
+            <p className="font-semibold">{t.name}</p>
+            <p className="text-2xl font-bold text-green-400 my-2">Free</p>
+            <p className="text-sm text-slate-400 flex-1">{t.blurb}</p>
+            <p className="mt-4 text-xs text-green-400">Included</p>
+          </div>
+        ))}
+      </div>
+
+      <p className="text-xs text-slate-500 mt-6">
+        CROA note: DisputeTrack is a software platform. While it is free, there is no subscription
+        fee. If paid plans return, those fees are for the software, not for credit repair services
+        to end consumers.
+      </p>
+    </div>
+  )
+}
+
+function PaidBilling() {
   const [status, setStatus] = useState(null)
   const [wizard, setWizard] = useState(null)
   const [loading, setLoading] = useState('')
@@ -83,4 +114,8 @@ export default function Billing() {
       </p>
     </div>
   )
+}
+
+export default function Billing() {
+  return FREE_MODE ? <FreeBilling /> : <PaidBilling />
 }

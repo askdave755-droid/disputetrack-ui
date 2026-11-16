@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom'
 import { getToken } from '../api.js'
+import { FREE_MODE } from '../flags.js'
 
 const COMPARISON = [
   ['Price', '$3,000–$10,000 upfront', '$29–$499/month'],
@@ -47,6 +48,16 @@ const FAQ = [
 
 export default function Landing() {
   const authed = !!getToken()
+  const comparison = FREE_MODE
+    ? COMPARISON.map((row) => (row[0] === 'Price' ? ['Price', row[1], 'Free for now'] : row))
+    : COMPARISON
+  const faq = FREE_MODE
+    ? FAQ.map(([q, a]) => (
+      q === 'Can I cancel anytime?'
+        ? [q, 'There is nothing to cancel right now. DisputeTrack is free — no card and no subscription. If paid plans return later, you will be able to cancel anytime.']
+        : [q, a]
+    ))
+    : FAQ
   return (
     <div className="min-h-screen bg-white text-slate-900">
       {/* NAV */}
@@ -111,7 +122,7 @@ export default function Landing() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {COMPARISON.map(([label, them, us], i) => (
+              {comparison.map(([label, them, us], i) => (
                 <tr key={label} className={i % 2 ? 'bg-slate-50' : 'bg-white'}>
                   <td className="p-4 font-semibold">{label}</td>
                   <td className="p-4 text-red-500">✗ {them}</td>
@@ -153,8 +164,12 @@ export default function Landing() {
 
       {/* TIERS */}
       <section className="max-w-6xl mx-auto px-5 py-16">
-        <h2 className="text-3xl font-extrabold text-center mb-2">Pick your level of help</h2>
-        <p className="text-center text-slate-500 mb-3">Cancel anytime. No setup fees. No long-term contract. Every tier includes the letter engine, dashboard, and LegalBrain alerts.</p>
+        <h2 className="text-3xl font-extrabold text-center mb-2">{FREE_MODE ? 'Free for now' : 'Pick your level of help'}</h2>
+        <p className="text-center text-slate-500 mb-3">
+          {FREE_MODE
+            ? 'Every level is included. No card, no checkout, no contract. The letter engine, dashboard, and LegalBrain alerts are all open.'
+            : 'Cancel anytime. No setup fees. No long-term contract. Every tier includes the letter engine, dashboard, and LegalBrain alerts.'}
+        </p>
         <p className="text-center text-sm font-semibold text-blue-700 mb-10 max-w-2xl mx-auto">
           Letters are prepared for your review in every tier — you sign and mail every one. You are always the sender.
         </p>
@@ -167,8 +182,11 @@ export default function Landing() {
                 {t.name}
                 {t.key === 'd4y' && <span className="ml-1 text-[10px] bg-emerald-400 text-emerald-950 px-2 py-0.5 rounded-full uppercase">white-glove prep</span>}
               </p>
-              <p className={`text-4xl font-extrabold my-3 ${t.key === 'd4y' ? 'text-white' : 'text-blue-600'}`}>
-                ${t.price}<span className={`text-base font-semibold ${t.key === 'd4y' ? 'text-blue-200' : 'text-slate-400'}`}>/mo</span>
+              <p className={`text-4xl font-extrabold my-3 ${FREE_MODE ? (t.key === 'd4y' ? 'text-emerald-300' : 'text-emerald-600') : (t.key === 'd4y' ? 'text-white' : 'text-blue-600')}`}>
+                {FREE_MODE ? 'Free' : `$${t.price}`}
+                <span className={`text-base font-semibold ${t.key === 'd4y' ? 'text-blue-200' : 'text-slate-400'}`}>
+                  {FREE_MODE ? ' for now' : '/mo'}
+                </span>
               </p>
               <p className={`text-sm flex-1 ${t.key === 'd4y' ? 'text-blue-100' : 'text-slate-500'}`}>{t.blurb}</p>
               <p className={`text-[11px] mt-3 ${t.key === 'd4y' ? 'text-blue-200' : 'text-slate-400'}`}>{SENDER_FOOTNOTE}</p>
@@ -188,7 +206,7 @@ export default function Landing() {
           <h2 className="text-3xl font-extrabold text-center mb-2">Common questions, straight answers</h2>
           <p className="text-center text-slate-500 mb-10">The things people ask before they take control of their own report.</p>
           <div className="space-y-3">
-            {FAQ.map(([q, a]) => (
+            {faq.map(([q, a]) => (
               <details key={q} className="bg-white rounded-xl border border-slate-200 shadow-sm group">
                 <summary className="cursor-pointer p-5 font-bold text-slate-800 list-none flex items-center justify-between">
                   {q}
@@ -208,8 +226,9 @@ export default function Landing() {
           Take the Quiz →
         </Link>
         <p className="text-blue-200 text-xs mt-6 max-w-xl mx-auto">
-          DisputeTrack is a self-service software platform. Subscription fees are for software tools,
-          organization, and education — not for acting on your behalf.
+          {FREE_MODE
+            ? 'DisputeTrack is free for now. It is a self-service software platform — not a service that acts on your behalf.'
+            : 'DisputeTrack is a self-service software platform. Subscription fees are for software tools, organization, and education — not for acting on your behalf.'}
         </p>
       </section>
 
@@ -219,8 +238,11 @@ export default function Landing() {
             DisputeTrack is a self-service software platform. It is not a law firm and does not provide
             credit, legal, or financial advice. We do not act on your behalf and never contact any credit
             bureau, creditor, or furnisher for you — you are the sender of every letter. Exercising your
-            rights under FCRA Section 611 is free for every consumer; subscription fees are for software
-            tools, organization, and education only. Results vary; no outcome is guaranteed. Cancel anytime.
+            rights under FCRA Section 611 is free for every consumer.{' '}
+            {FREE_MODE
+              ? 'DisputeTrack itself is free for now — no subscription and no checkout.'
+              : 'Subscription fees are for software tools, organization, and education only.'}
+            {' '}Results vary; no outcome is guaranteed.{FREE_MODE ? '' : ' Cancel anytime.'}
           </p>
           <p className="text-xs mt-4 text-slate-500">© 2026 DisputeTrack</p>
         </div>

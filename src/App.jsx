@@ -1,5 +1,9 @@
+import { useEffect, useState } from 'react'
 import { Routes, Route, Navigate, Link, useNavigate } from 'react-router-dom'
-import { getToken, setToken } from './api.js'
+import { api, getToken, setToken } from './api.js'
+import { STRIKES_ENABLED } from './flags.js'
+import { strikeStateFromUser } from './strikes.js'
+import Strikes from './components/Strikes.jsx'
 import Landing from './pages/Landing.jsx'
 import Quiz from './pages/Quiz.jsx'
 import Login from './pages/Login.jsx'
@@ -20,10 +24,21 @@ function Protected({ children }) {
 
 function Layout({ children }) {
   const navigate = useNavigate()
+  const [strikeState, setStrikeState] = useState(null)
   const logout = () => {
     setToken(null)
     navigate('/')
   }
+
+  useEffect(() => {
+    if (!STRIKES_ENABLED) return
+    api('/api/auth/me')
+      .then((me) => setStrikeState(strikeStateFromUser(me)))
+      .catch(() => {})
+  }, [])
+
+  const blocked = STRIKES_ENABLED && !!strikeState?.blocked
+
   return (
     <div className="min-h-screen">
       <nav className="border-b border-slate-800 px-6 py-4 flex items-center gap-6">
@@ -36,7 +51,10 @@ function Layout({ children }) {
         <Link to="/counselor" className="text-sm text-slate-300 hover:text-white">Counselor</Link>
         <button onClick={logout} className="ml-auto text-sm text-slate-400 hover:text-white">Log out</button>
       </nav>
-      <main className="p-6 max-w-6xl mx-auto">{children}</main>
+      <main className="p-6 max-w-6xl mx-auto">
+        <Strikes state={strikeState} />
+        {!blocked && children}
+      </main>
     </div>
   )
 }

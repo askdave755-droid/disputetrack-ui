@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { api, API_URL, getToken } from '../api.js'
+import { FREE_MODE } from '../flags.js'
 import Calendly from '../components/Calendly.jsx'
 
 const TIER_NAMES = { diy: 'DIY', guided: 'Guided', dwy: 'Done-With-You', d4y: 'Done-For-You' }
@@ -74,7 +75,7 @@ export default function Wizard() {
 
   const gd = progress.gate_data || {}
   const tier = progress.recommended_tier || 'diy'
-  const canBook = CALL_TIERS.includes(tier)
+  const canBook = FREE_MODE || CALL_TIERS.includes(tier)
   const gateDone = (n) => !!gd[String(n)]?.completed
   const unlocked = (n) => n <= progress.current_gate
   const outcomes = gd.bureau_outcomes || {}
@@ -431,7 +432,7 @@ export default function Wizard() {
           <button onClick={copyReferral} className="px-4 py-2 rounded border border-slate-600 hover:border-amber-500 text-sm">
             {copied ? '✅ Link copied!' : 'Refer a Friend — $50 credit'}
           </button>
-          {tier !== 'd4y' && (
+          {!FREE_MODE && tier !== 'd4y' && (
             <Link to="/billing" className="px-4 py-2 rounded border border-amber-500 text-amber-400 hover:bg-amber-500 hover:text-slate-950 text-sm">
               Upgrade to D4Y for white-glove
             </Link>
